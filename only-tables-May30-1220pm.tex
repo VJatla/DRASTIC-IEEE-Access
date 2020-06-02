@@ -1,0 +1,1518 @@
+\documentclass{book}
+\usepackage{dsfont} %for \mathds command
+%\usepackage{fullminipage}
+\usepackage{epsfig}
+\usepackage[cmex10]{amsmath}
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{float}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{cite}
+%\usepackage{floatrow}
+\usepackage{bm}
+\usepackage{mathrsfs}
+\usepackage{subfig}
+\usepackage{mathtools}
+%\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{arydshln}
+\usepackage{inputenc}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+%\usepackage{stfloats}
+\usepackage{booktabs}
+\newcommand*{\thead}[1]{\multicolumn{1}{c}{\bfseries #1}}
+%\usepackage{algorithmic}
+\usepackage{color}
+\usepackage{amstext}
+\usepackage{nomencl}
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-}
+\renewcommand{\UrlFont}{\small\tt}
+\usepackage{multirow}
+\usepackage{appendix}
+\usepackage{verbatim}
+\usepackage{longtable}
+\usepackage{rotating}
+\usepackage{fancyhdr}% fancyhdr related command; details in its documentation
+%\graphicspath{{figures/}}
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
+\newcommand{\COMMENT}[1]{$\triangleright$  #1}
+
+
+\begin{document}
+	
+	\frontmatter
+	
+	\title{ Adaptive Encoding for Constrained Video Delivery in HEVC, VP9, AV1 and VVC Compression Standards and
+		Adaptation to Video Content}
+	
+	
+	
+	\date{July 2020}
+	
+	\maketitle
+	
+	\mainmatter
+	
+	%
+	%                       Chapter 1
+	%
+	\chapter{Introduction}
+	
+	
+	
+	%
+	%                                       Chapter 2
+	%
+	\chapter[Optimal GOP Configurations for x265 HEVC Encoder]{Optimal GOP Configurations for x265 HEVC Encoder in DRASTIC Framework}
+\begin{table}[t]
+	\center
+	\caption{Encoder GOP configuration setup broken into two groups.
+		Group A presets are extensions of GOP B4 into new GOP B2,B6  and consist of:
+		ultra fast (U), super fast (S), very fast (V), faster (Fr), fast (F), medium (M), 
+		and slow (S).
+		Group B profiles are extensions of default GOP B8 into new GOP B6,B10  and consists:
+		slower (Sl), very slow (VS) and Placebo (P).
+		There is a total of 3600 possible configurations.
+	}\label{table:ProfConf}
+	\begin{tabular}{l|ll} 
+		\hline
+		\textbf{Parameter} & \textbf{Profile Group A} & \textbf{Profile Group B} \\ 
+		\hline\hline
+		Presets             &  U, S, V, Fr, F, M, S & Sl, Vs, P                 \\
+		GOP                 &    AI, \textbf{B2}, B4, \textbf{B6}, ZL   & AI, \textbf{B6}, B8, \textbf{B10}, ZL \\
+		GOP Str             &    Open/Close            & Open/Close\\
+		QP                    &   22, 27, 32, 37, 42   & 22, 27, 32, 37, 42 \\
+		SAO                 &    On/Off                    & On/Off \\
+		DBF                 &     On/Off                   & On/Off \\
+		Tuning             &     PSNR, ZL, FD       & PSNR, ZL, FD        \\
+		Configs.          &     360 per profile       & 360 per profile       \\
+		\hline
+	\end{tabular}
+\end{table}
+
+
+\begin{table}[t!]
+	\caption{Optimal GOP configurations. 
+	              The new GOP configurations are shown in bold. \label{table:GOP}}
+        \center
+	\begin{tabular}{|l|lll|} %{|l|l|l|l|}
+		\hline
+		\multirow{2}{*}{\textbf{GOP}} & \multicolumn{3}{c|}{\textbf{Optimal Configurations (\%)}}    \\ % \cline{2-4}  
+		\textbf{conf.} & \textbf{Jockey}  & \textbf{Pa} & \textbf{Rb}  \\ \hline \hline
+		AI      & 63~(14.38\%) 	     & 101~(11.46\%)		& 34~(59.64\%)	\\ 
+\textbf{B2}	   & 145~(33.1\%)   & 208~(23.6\%)		& 5~(8.77\%)		\\ 
+		B4     & 25~(5.7\%)      & 179~(20.31\%)		& 3~(5.2\%)		\\ 
+\textbf{B6}    & 33~(7.53\%) 	    & 136~(15.43\%)		& 1~(1.75\%)		\\ 
+		B8     & 6~(1.36\%)  	    & 27~(3.06\%)			& 0~(\%)			\\ 
+\textbf{B10}   & 0~(0\%)  		& 17~(1.92\%)			& 0~(\%)			\\ 
+		ZL     & 166~(37.89\%)	& 213~(24.17\%)		& 14~(24.56\%)	\\ \hline
+		Pareto & \textbf{438}~(100\%) & \textbf{881}~(100\%) & \textbf{57}~(100\%) \\ \hline
+	\end{tabular}
+\end{table}
+
+
+	\begin{table}[bt!]
+	\caption{Mode Optimization.
+	We measure bitrate in bits per second, PSNR in dB, and time in seconds
+	We use BR for bitrate, Q for image quality, and T for encoding time.
+	In each case, we present the quantity that is optimized in bold.
+	Refer to table \ref{table:ProfConf} for abbreviations.
+	Refer to \eqref{eq:minT}, \eqref{eq:minibps}, and \eqref{eq:maxQ} for
+	definitions of the modes and the constraints. Note that all of the constraints
+	have been met in these examples.}
+	\label{table:OptimalGOP}
+	\begin{tabular}{l|lllll} %{|l|l|l|l|}
+		%\hline  
+		\multicolumn{6}{c}{2KJockey 1920x1080 @30 FPS, 150 frames}    \\ % \cline{2-4}
+		\hline
+		\textbf{Mode}  & \textbf{GOP}  & \textbf{Profile} & \textbf{Time} & \textbf{Bitrate} & \textbf{PSNR} \\ \hline %\hline
+%		Min BR    & ZL   & P	&  250.18 & \textbf{418.72} & 35.968	\\ 
+		Max Q          &  B2   & SF	& 4.8                 & 4167.3  & \textbf{42.8} \\ 
+		Constraints  &          &       & 5.0                 & 5000.0   &                         \\
+		%\hline
+		%\multicolumn{6}{c}{2KJockey 1920x1080 @30 FPS, 150 frames}    \\ % \cline{2-4}
+		\hline
+		Min T            &  B2   & M	& \textbf{6.9}   & 1049.2    & 39.1	\\ 
+		Constraints   &         &       &                     & 1300.0     & 39.0      \\
+		\hline \hline
+		\multicolumn{6}{c}{Pedestrian 768x432 @25 FPS, 250 frames}  \\ 
+		\hline
+		\textbf{Mode}  & \textbf{GOP}  & \textbf{Profile} & \textbf{Time} & \textbf{Bitrate} & \textbf{PSNR} \\ \hline %\hline
+		Min BR        & ZL  &Fr  & 2.3 & \textbf{147.0} & 31.9 \\
+		Constraints  &       &     & 3.0 &                       & 31.0 \\
+%		\hline
+%		Max Q    & ZL   &S	& 31.89  &1843.49 & \textbf{43.137}	\\ 
+%		Min T    & B6   &VS	&\textbf{90.02} &960.17 &41.183	\\ 
+%		\hline
+%		 & \multicolumn{5}{c}{Riverbed 768x432 @25 FPS}    \\ % \cline{2-4}  
+%		Min BR   & B2  &SF 	& 3.59  & \textbf {182.26} & 32.715	\\ 
+%		Max Q    & ZL  &VF	& 2.91 & 656.82 & \textbf{30.495}	\\ 
+%		Min T    & AI  &UF	& \textbf{5.4} &10999.23  &42.218 \\ 
+		\hline %\hline
+	\end{tabular}
+\end{table}
+	
+	
+	
+	
+	
+	%
+	%                       Chapter 3
+	%
+	\chapter{ Adaptive video encoding based on Camera activity Classification}
+\begin{table}[t!]
+	\caption{\label{tbl:adaptive}
+		Adaptive video quality and encoding time constraints based on
+		camera activity classification.
+		For all cases, we consider the minimum bitrate modes.
+		For real-time encodings, we require that the total encoding
+		time is less than 10 seconds for encoding the 500 frames
+		(50 frames per second).
+		For comparison, we consider leaving the same required video
+		quality level (SSIM)  over the entire video and the specific
+		video region of interest.
+		The bitrate savings result from the use of lower video quality
+		constraints over video regions that are not not of interest.                
+	}
+	\begin{tabular}{lllll}
+		\multicolumn{4}{c}{Shield video}\\
+		{\bf Mode} & {\bf Frames} & {\bf Activity} & {\bf Constraints} \\
+		\hline \hline 
+		Min bitrate & $1 - 500$ & NA & {\tt SSIM} $\geq$ 0.94\\
+		&                  &             & {\tt TIME} $\leq$ 10 \\
+		\hline
+		Min bitrate & $1 - 272$ & Track & {\tt SSIM} $\geq$ 0.88\\
+		&         &       & {\tt TIME} $\leq$ 10\\[0.03 true in]
+		Min bitrate & $ 273 - 364$ & Stationary & {\tt SSIM} $\geq$ 0.94\\
+		&                        &                  & {\tt TIME} $\leq$ 10\\[0.03 true in]
+		& $ 365 - 500$ & Zoom       & {\tt SSIM} $\geq$ 0.94\\
+		&                        &                 & {\tt TIME} $\leq$ 10\\
+		\hline
+	\end{tabular}
+	\bigskip
+	
+	\begin{tabular}{lllll}
+		\multicolumn{4}{c}{Park run video}\\ 
+		{\bf Mode} & {\bf Frames} & {\bf Activity} & {\bf Constraints} \\
+		\hline \hline
+		Min bitrate  & $1 - 500$ & NA & {\tt SSIM} $\geq$ 0.94\\
+		&           &             & {\tt TIME} $\leq$ 10\\
+		\hline
+		Min bitrate & $1 - 400$ & Track & {\tt SSIM} $\geq$ 0.85\\
+		&         &       & {\tt TIME} $\leq$ 10\\[0.03 true in]
+		Min bitrate  & $ 401 - 500$ & Stationary & {\tt SSIM} $\geq$ 0.95\\
+		&         &       & {\tt TIME} $\leq$ 10\\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[bt!]
+	\centering
+	\caption{\label{tbl:classify} 
+		Camera activity classification results for three binary classifiers used
+		to detect camera motion (tracking), stationary camera,
+		and zooming.
+	}
+	\begin{tabular}{lccc }
+		{\bf Classifier} & Tracking & Stationary & Zoom \\
+		\hline
+		\hline
+		Tracking  vs   & 5 & 0 & - \\
+		Stationary & 1 & 4 & - \\
+		\hline
+		Zoom vs    & - & 4 & 0 \\
+		Stationary  & - & 2 & 4  \\
+		\hline
+		Tracking vs & 4 & - & 1 \\
+		Zoom     & 0 & - & 4  \\
+		\hline
+	\end{tabular}
+\end{table}
+
+
+\begin{table}[bt!]
+	\centering
+	\caption{\label{tbl:full} 
+		Camera activity classification results for all video activities based
+		on the binary classifiers of table \ref{tbl:classify}.
+		For the results, we use the UT LIVE video quality database \cite{Kalpana}
+		with $N=10$ original videos segmented into 14 actual camera activities.
+	}
+	\begin{tabular}{lccc }
+		{\bf Classification} & Tracking & Stationary & Zoom \\
+		\hline
+		\hline
+		Tracking                 & 4             &  0 &  1 \\
+		Stationary               & 0             &  4 &  0 \\
+		Zoom                      & 1             &  1 &  3 \\
+		\hline
+	\end{tabular}
+\end{table}
+
+	
+	
+	%
+	%                       Chapter 4
+	%
+\chapter[Segment based x265 encoding with adaptive Local Pareto models for VoD]{Segment based x265 encoding with adaptive Local Pareto models for  Video On Demand (VoD)}
+\begin{table}[ht!]
+	\centering
+	\caption{x265 HEVC Encoder Configurations for Ultrafast Preset 	}\label{table:x265EncConf}
+	\begin{tabular}{ll|lll} 
+		\hline
+		\textbf{Parameter} & \textbf{Value} & \textbf{Parameter} & \textbf{Value}  & \\
+		\hline
+		Presets         &Ultrafast 		  &Frame Threads		&8       \\
+		GOP Structures  &B2,B3,B4,B6,ZL   &SAO filter           &On/Off    \\
+		GOP Type        &Open/Close       &Deblocking filter    &On/Off  \\
+		QP              &16-45            &Tune                 &PSNR \\
+		Key-Interval    &25,30,50         &CTU                  &64 \\
+		\hline
+		Total encoding                                &200            \\
+		combinations per segment                      &       \\
+		\hline
+	\end{tabular}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{CQP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			Seg0 & 28 & On & B3 & 10825.29 & 38.73  & 96.98 \\ \hline
+			Seg1 & 28 & On & B3 & 11676.14 & 38.34  & 95.86 \\ \hline
+			Seg2 & 28 & On & B3 & 11037.35 & 38.424 & 96.21 \\ \hline
+			Seg3 & 28 & On & B3 & 11441.38 & 38.113 & 95.45 \\ \hline
+			\textit{\textbf{Avg}} &
+			&
+			&
+			&
+			\textbf{11205.77}&
+			\textbf{38.45} &
+			\textbf{96.26} \\ \hline
+		\end{tabular}%
+	}
+	\caption{Default Mode - YouTube Recommended Bitrate achieved by CQP.}
+	\label{tab:x265Def_maxQ_BBDrive}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+            {{$\log(\text{PSNR})$}}    & 3.866  & -0.005 & -6.521e-05 & B6 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}    & 3.965  & 0.058  & -0.001298  & B6 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{Bits})$}}   & 15.946 & -0.304 & 0.0024092  & B6 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}} & 1.872  & 0.095  & 0.0098901  & B6 & Quadratic & 0.99 \\ \hline
+		\end{tabular}%
+	}
+\caption{Model Equations for Maximum Video Quality Mode}
+\label{tab:modeleqn_BBDrive_MaxQ}
+\end{table}
+
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{QP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			Seg0 & 28 & On & B6 & \textbf{10639.83}    & 38.771         & \textbf{44.12}    & 97.008         \\ \hline
+			&    &    &    & \textless{}=11205.77 &                & \textgreater{}=25 &                \\ \hline
+			Seg1 & 28 & On & B6 & \textbf{11124.35}    & 38.41          & \textbf{44.84}    & 95.91          \\ \hline
+			&    &    &    & \textless{}=11205.77 &                & \textgreater{}=25 &                \\ \hline
+			Seg2 & 28 & On & B6 & \textbf{10820.78}    & 38.477         & \textbf{46.3}     & 96.38          \\ \hline
+			&    &    &    & \textless{}=11205.77 &                & \textgreater{}=25 &                \\ \hline
+			Seg3 & 28 & On & B6 & \textbf{11604.94}    & 38.232         & \textbf{41.25}    & 95.57          \\ \hline
+			&    &    &    & \textless{}=11205.77 &                & \textgreater{}=25 &                \\ \hline
+\textit{\textbf{Avg}}  &    &    &    & \textbf{10935.982}   & \textbf{38.52} & \textbf{44.7}     & \textbf{96.34} \\ \hline
+		\end{tabular}%
+	}
+	\caption{DRASTIC Maximum Video Quality Mode for BasketballDrive 1920x1080, 50 \textit{fps}.}
+	\label{tab:x265Dras_maxQ_BBDrive}
+\end{table}
+
+	\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textit{\textbf{Overall Bitrate Gain}} & \textit{\textbf{Overall PSNR}} & \textit{\textbf{Overall VMAF}} \\ \hline
+			2.40 \%                                & 0.07 dB                        & 0.08                           \\ \hline
+		\end{tabular}%
+	}	
+\caption{Overall DRASTIC Gains from Maximum Quality Mode.}
+\label{tab:maxQ_Gains}
+        \end{table}
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{QP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			Seg0 & 29 & On & B6 & \textit{\textbf{9477.13}} & \textit{\textbf{38.523}} & \textit{\textbf{42.04}} & 95.58 \\ \hline
+			&    &    &    &                           & \textgreater{}=38.45     & \textgreater{}=25       &       \\ \hline
+			Seg1 & 29 & On & B6 & \textit{\textbf{9986.59}} & \textit{\textbf{38.21}}  & \textit{\textbf{42.18}} & 94.5  \\ \hline
+			&    &    &    &                           & \textgreater{}=38.45     & \textgreater{}=25       &       \\ \hline
+			Seg2 & 29 & On & B6 & \textit{\textbf{9591.56}} & \textit{\textbf{38.29}}  & \textit{\textbf{43.52}} & 95.11 \\ \hline
+			&    &    &    &                           & \textgreater{}=38.45     & \textgreater{}=25       &       \\ \hline
+			Seg3 & 29 & On & B6 & \textit{\textbf{9853.99}} & \textit{\textbf{38.883}} & \textit{\textbf{41.39}} & 94.09 \\ \hline
+			&    &    &    &                           & \textgreater{}=38.45     & \textgreater{}=25       &       \\ \hline
+			\textit{\textbf{Avg}} &
+			\textit{\textbf{}} &
+			\textit{\textbf{}} &
+			\textit{\textbf{}} &
+			\textit{\textbf{9701.98}} &
+			\textit{\textbf{38.39}} &
+			\textit{\textbf{43.23}} &
+			\textit{\textbf{95.541}} \\ \hline
+		\end{tabular}%
+	}
+		\caption{DRASTIC Minimum Bitrate Mode for BasketballDrive 1920x1080, 50 \textit{fps}.}
+	\label{tab:x265Dras_minB_BBDrive}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textit{\textbf{Overall Bitrate Gain}} & \textit{\textbf{Overall PSNR}} & \textit{\textbf{Overall VMAF}} \\ \hline
+			13.41 \%                               & -0.06 dB                       & -0.72                          \\ \hline
+		\end{tabular}%
+	}
+\caption{Overall DRASTIC Gains from Minimum Bitrate Mode}
+\label{tab:x265minB_Gains}
+\end{table}
+
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\multirow{2}{*}{\textit{\textbf{Seg ID}}} &
+			\multirow{2}{*}{\textit{\textbf{CQP}}} &
+			\multirow{2}{*}{\textit{\textbf{Fil}}} &
+			\multirow{2}{*}{\textit{\textbf{GOP}}} &
+			\multirow{2}{*}{\textit{\textbf{Bitrate (kbps)}}} &
+			\multirow{2}{*}{\textit{\textbf{PSNR   (dB)}}} &
+			\multirow{2}{*}{\textit{\textbf{VMAF}}} \\
+			&    &    &    &                    &                &                \\ \hline
+			Seg0                  & 28 & On & B3 & 11129.81           & 37.12          & 92.48          \\ \hline
+			Seg1                  & 28 & On & B3 & 10148.02           & 37.23          & 92.85          \\ \hline
+			Seg2                  & 28 & On & B2 & 11313.50           & 37.09          & 92.42          \\ \hline
+			Seg3                  & 28 & On & B2 & 10347.74           & 37.30          & 92.95          \\ \hline
+			\textit{\textbf{Avg}} &    &    &    & \textbf{10812.173} & \textbf{37.16} & \textbf{92.62} \\ \hline
+		\end{tabular}%
+	}
+	\caption{Default Mode - YouTube Recommended Bitrate achieved by CQP.}
+\label{tab:x265Def_maxQ_Cactus}
+\end{table}
+\clearpage
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{QP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			Seg0 & 28 & On & B3 & \textbf{10093.05}    & 37.399         & \textbf{52.93}    & 92.1         \\ \hline
+			&    &    &    & \textless{}=10812.173   &                & \textgreater{}=25 &                \\ \hline
+			Seg1 & 28 & On & B3 & \textbf{9191.61}    & 37.514          & \textbf{51.8}    & 92.4          \\ \hline
+			&    &    &    & \textless{}=10812.173 &                & \textgreater{}=25 &                \\ \hline
+			Seg2 & 28 & On & B2 & \textbf{10260.5}    & 37.382         & \textbf{52.91}     & 92.06          \\ \hline
+			&    &    &    & \textless{}=10812.173 &                & \textgreater{}=25 &                \\ \hline
+			Seg3 & 28 & On & B2 & \textbf{10377.76}    & 37.662         & \textbf{46.99}    & 92.58          \\ \hline
+			&    &    &    & \textless{}=10812.173 &                & \textgreater{}=25 &                \\ \hline
+			\textit{\textbf{Avg}}  &    &    &    & \textbf{9901.32}   & \textbf{37.45} & \textbf{51.99}     & \textbf{92.22} \\ \hline
+		\end{tabular}%
+	}
+	\caption{DRASTIC Maximum Video Quality Mode for Cactus 1920x1080, 50 \textit{fps}.}
+	\label{tab:x265Dras_maxQ_Cactus}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.86   & -0.00661 & -7.489899e-05  & B3 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}    & 3.80   & 0.069566  & -0.0015476  & B3 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{Bits})$}}    & 16.65 & -0.319803 & 0.002179  & B3 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}} & 0.706  & 0.153  & -0.001585  & B3 & Quadratic & 0.96 \\ \hline
+		\end{tabular}%
+	}
+	\caption{B3 GOP Model Equations for Maximum Video Quality Mode.}
+	\label{tab:B3modeleqn_Cactus_MaxQ}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.89  & -0.00854 & -4.36249e-05 & B2 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}    & 3.84  & 0.066985  & -0.00149858 & B2 & Quadratic & 0.98 \\ \hline
+			{{$\log(\text{Bits})$}}    & 16.97 & -0.337398 & 0.00244438  & B2 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}} & 0.69  & 0.1580597  & -0.001727  & B2 & Quadratic & 0.97 \\ \hline
+		\end{tabular}%
+	}
+	\caption{B2 GOP Model Equations for Maximum Video Quality Mode.}
+	\label{tab:B2modeleqn_Cactus_MaxQ}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textit{\textbf{Overall Bitrate Gain}} & \textit{\textbf{Overall PSNR}} & \textit{\textbf{Overall VMAF}} \\ \hline
+			8.4 \%                               & 0.29                        & -0.4                          \\ \hline
+		\end{tabular}%
+	}
+	\caption{Overall DRASTIC Gains from Maximum Video Quality Mode.}
+	\label{tab:x265maxQ_GainsCactus}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{QP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			Seg0 & 29 & On & B4 & \textit{\textbf{9322.85}} & \textit{\textbf{37.074}} & \textit{\textbf{49.21}} & 90.58 \\ \hline
+			&    &    &    &                           & \textgreater{}=37.1     & \textgreater{}=25       &       \\ \hline
+			Seg1 & 28 & On & B4 & \textit{\textbf{10178.66}} & \textit{\textbf{37.54}}  & \textit{\textbf{47.69}} & 92.26  \\ \hline
+			&    &    &    &                           & \textgreater{}=37.1     & \textgreater{}=25       &       \\ \hline
+			Seg2 & 29 & On & B3 & \textit{\textbf{9467.78}} & \textit{\textbf{37.12}}  & \textit{\textbf{37.09}} & 90.81 \\ \hline
+			&    &    &    &                           & \textgreater{}=37.1     & \textgreater{}=25       &       \\ \hline
+			Seg3 & 28 & On & B4 & \textit{\textbf{10411.23}} & \textit{\textbf{37.618}} & \textit{\textbf{43.59}} & 92.40 \\ \hline
+			&    &    &    &                           & \textgreater{}=37.1     & \textgreater{}=25       &       \\ \hline
+			\textit{\textbf{Avg}} &
+			\textit{\textbf{}} &
+			\textit{\textbf{}} &
+			\textit{\textbf{}} &
+			\textit{\textbf{9731.91}} &
+			\textit{\textbf{37.27}} &
+			\textit{\textbf{44.55}} &
+			\textit{\textbf{91.33}} \\ \hline
+		\end{tabular}%
+	}
+	\caption{DRASTIC Minimum Bitrate Mode for Cactus 1920x1080, 50 \textit{fps}.}
+	\label{tab:x265Dras_minB_Cactus}
+\end{table}
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.86   & -0.006686  & -7.314043e-05  & B4 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}} & 3.822  & 0.0684533  & -0.0015321    & B4 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{Bits})$}}    & 16.519 & -0.313125   & 0.00210119   & B4 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}} & 0.4027 & 0.173966    & -0.0018987   & B4 & Quadratic & 0.93 \\ \hline
+\end{tabular}%
+}
+\caption{B4 GOP Model Equations for Minimum Bitrate Mode Mode.}
+\label{tab:B4modeleqn_Cactus_MinB}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.86   & -0.00661 & -7.489899e-05  & B3 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}    & 3.80   & 0.069566  & -0.0015476  & B3 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{Bits})$}}    & 16.65 & -0.319803 & 0.002179  & B3 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}} & 0.706  & 0.153  & -0.001585  & B3 & Quadratic & 0.96 \\ \hline
+		\end{tabular}%
+	}
+	\caption{B3 GOP Model Equations for Minimum Bitrate Mode.}
+\label{tab:B3modeleqn_Cactus_MinB}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textit{\textbf{Overall Bitrate Gain}} & \textit{\textbf{Overall PSNR}} & \textit{\textbf{Overall VMAF}} \\ \hline
+			10 \%                               & 0.11                        & -1.29                          \\ \hline
+		\end{tabular}%
+	}
+	\caption{Overall DRASTIC Gains from Minimum Bitrate Mode.}
+	\label{tab:x265minB_GainsCactus}
+\end{table}
+
+
+        
+	
+	%
+	%                                       Chpater 5
+	%
+	\chapter[Overview of Google VP9 Codec for VoD]{Overview of Google VP9 Codec with Segment based encoding at GOP level}
+	\begin{table}[ht!]
+	\centering
+	\begin{tabular}{l|ll} 
+		\hline
+		\textbf{Parameter} & \textbf{Value}  \\
+		\hline\hline
+		Presets             &  realtime 	      \\
+		Encoding Structure   &   ALT0,ALT1,ALT2, ALT4,ALT6  \\
+		CPU Used        &    8		 \\
+		DBF                       & On/Off  					\\
+		QP              &         16 - 52 in steps of 4 \\   
+		Tuning                    & PSNR \\
+		arnr-maxFrames  & 			7 \\
+		arnr-strength  & 			5  \\
+		arnr-type        & 				3 \\
+		Row-mt          &             1   \\
+		\hline
+		Total encoding \\
+		combinations per segment   & 200       \\
+		\hline
+	\end{tabular}
+	\caption{VP9 Encoder Configurations for \textbf{rt} with our new GOPs.}\label{table:VP9EncConf}
+        \end{table}
+
+        \begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{CQP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			Seg0 & 34 & On & ALT0 & 4045.13 & 38.85 & 95.38 \\ \hline
+			Seg1 & 34 & On & ALT0 & 4172.05 & 38.76 & 96.36 \\ \hline
+			Seg2 & 34 & On & ALT0 & 4314.00 & 38.71 & 97.51 \\ \hline
+			Seg3 & 34 & On & ALT0 & 4329.03 & 38.35 & 97.25 \\ \hline
+			\textit{\textbf{Avg}} &
+			&
+			&
+			&
+			\textbf{4192.25}&
+			\textbf{38.83} &
+			\textbf{96.50} \\ \hline
+		\end{tabular}%
+	}
+	\caption{Typical Mode - YouTube Recommended Bitrate achieved by CQP.}
+	\label{tab:vp9Def_maxQ_BBDrill}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.845  & -0.002435  & -6.242467e-05 & ALT4 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}     & 4.469  & 0.0115147  & -0.00023917    & ALT4 & Quadratic & 0.98 \\ \hline
+			{{$\log(\text{Bits})$}}     & 10.607 & -0.063893   & -0.0001330  & ALT4 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}}  & 2.6980 & 0.028305    & -0.000201   & ALT4 & Quadratic & 0.94 \\ \hline
+		\end{tabular}%
+	}
+	\caption{ALT4 GOP Model Equations for Maximum Video Quality Mode.}
+	\label{tab:ALT4modeleqn_BBDrill_MaxQ}
+\end{table}
+
+
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.839   & -0.002816  & -5.760326e-05  & ALT6 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}     & 4.476041  & 0.01082792  & -0.00024    & ALT6 & Quadratic & 0.97 \\ \hline
+			{{$\log(\text{Bits})$}}     & 10.031 & -0.0469166   & -0.00029   & ALT6 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}}  & 2.839 & 0.021954    & -0.000128   & ALT6 & Quadratic & 0.96 \\ \hline
+		\end{tabular}%
+	}
+	\caption{ALT6 GOP Model Equations for Maximum Video Quality Mode.}
+	\label{tab:ALT6modeleqn_BBDrill_MaxQ}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{QP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			Seg0 & 31 & Off & ALT6 & \textbf{3979.64}    & 40.43         & \textbf{29.88}    & 98.20         \\ \hline
+			&    &    &    & \textless{}=4192.25   &                & \textgreater{}=25 &                \\ \hline
+			Seg1 & 32 & Off & ALT4 & \textbf{3813.40}    & 40.00          & \textbf{28.73}    & 98.14          \\ \hline
+			&    &    &    & \textless{}=4192.25 &                & \textgreater{}=25 &                \\ \hline
+			Seg2 & 33 & Off & ALT4 & \textbf{3722.73}    & 39.71         & \textbf{29.48}     & 97.51          \\ \hline
+			&    &    &    & \textless{}=4192.25 &                & \textgreater{}=25 &                \\ \hline
+			Seg3 & 33 & Off & ALT6 & \textbf{3769.59}    & 39.52        & \textbf{26.89}    & 96.82          \\ \hline
+			&    &    &    & \textless{}=4192.25 &                & \textgreater{}=25 &                \\ \hline
+			\textit{\textbf{Avg}}  &    &    &    & \textbf{3831.69}   & \textbf{39.9} & \textbf{29.11}     & \textbf{97.83} \\ \hline
+		\end{tabular}%
+	}
+	\caption{DRASTIC Maximum Video Quality Mode for BasketballDrill 832x480, 50 \textit{fps}.}
+	\label{tab:VP9Dras_maxQ_BBDrill}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textit{\textbf{Overall Bitrate Gain}} & \textit{\textbf{Overall PSNR}} & \textit{\textbf{Overall VMAF}} \\ \hline
+			8.60 \%                                & 1.07 dB                        & 0.58                           \\ \hline
+		\end{tabular}%
+	}
+
+\caption{Overall DRASTIC Gains from Maximum Quality Mode}
+\label{tab:VP9maxQ_Gains}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{QP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			\textit{\textbf{Seg0}} & 36 & Off & ALT2 & 3926.41 & 39.46 & 90.24 & 96.35 \\ \hline
+			\textit{\textbf{Seg1}} & 37 & Off & ALT4 & 3870.24 & 39.28 & 88.05 & 96.55 \\ \hline
+			\textit{\textbf{Seg2}} & 38 & Off & ALT4 & 3671.57 & 38.89 & 93.97 & 95.58 \\ \hline
+			\textit{\textbf{Seg3}} & 40 & On  & ALT1 & 3276.9  & 38.26 & 72.5  & 93.82 \\ \hline
+			\textit{\textbf{Avg}} &
+			&
+			&
+			&
+			\textit{\textbf{3768.156}} &
+			\textit{\textbf{39.115}} &
+			\textit{\textbf{88.928}} &
+			\textit{\textbf{95.926}} \\ \hline
+		\end{tabular}%
+	}
+	\caption{DRASTIC Minimum Bitrate Mode for Basketball Drill 832x480, 50 \textit{fps}.}
+	\label{tab:VP9Dras_minB_BBDrill}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.869   & -0.00426  & -3.593591e-05  & ALT2 & Quadratic & 0.98 \\ \hline
+			{{$\log(\text{VMAF})$}}     & 4.474  & 0.0112119  & -0.00023707    & ALT2 & Quadratic & 0.98 \\ \hline
+			{{$\log(\text{Bits})$}}     & 10.331 & -0.0466433   & -0.0003759  & ALT2 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}}  & 2.498 & 0.1904638    & -0.002575699   & ALT2 & Quadratic & 0.92 \\ \hline
+		\end{tabular}%
+	}
+	\caption{ALT2 GOP Model Equations for Minimum Bitrate Mode.}
+	\label{tab:ALT2modeleqn_BBDrill_MinB}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.869   & -0.0042875  & -3.604318e-05  & ALT1 & Quadratic & 0.98 \\ \hline
+			{{$\log(\text{VMAF})$}}     & 4.472  & 0.01140  & -0.000242   & ALT1 & Quadratic & 0.98 \\ \hline
+			{{$\log(\text{Bits})$}}     & 10.30 & -0.046919   & -0.000365   & ALT1 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}}  & 2.587 & 0.186147   & -0.002526   & ALT1 & Quadratic & 0.91 \\ \hline
+		\end{tabular}%
+	}
+	\caption{ALT1 GOP Model Equations for Minimum Bitrate Mode.}
+	\label{tab:ALT1modeleqn_BBDrill_MinB}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.871   & -0.00433  & -3.471101e-05  & ALT4 & Quadratic & 0.98 \\ \hline
+			{{$\log(\text{VMAF})$}}     & 4.475  & 0.011089  & -0.000232   & ALT4 & Quadratic & 0.98 \\ \hline
+			{{$\log(\text{Bits})$}}     & 10.390 & -0.04794   & -0.000366   & ALT4 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}}  & 2.451 & 0.19260    & -0.00260   & ALT4 & Quadratic & 0.93 \\ \hline
+		\end{tabular}%
+	}
+	\caption{ALT4 GOP Model Equations for Minimum Bitrate Mode.}
+	\label{tab:ALT4modeleqn_BBDrill_MinB}
+\end{table}
+
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textit{\textbf{Overall Bitrate Gain}} & \textit{\textbf{Overall PSNR}} & \textit{\textbf{Overall VMAF}} \\ \hline
+			10.11 \%                               & 0.28 dB                        & -1.33                          \\ \hline
+		\end{tabular}%
+	}
+	\caption{Overall DRASTIC Gains from Minimum Bitrate Mode}
+\label{tab:VP9minB_Gains}
+\end{table}
+
+
+	
+
+	
+	%
+	%                                       Chpater 6
+	%
+	\chapter[SVT-AV1: A Scalable, Open Source AV1 Codec and Pareto Models]{SVT-AV1: A Scalable, Open Source AV1 Codec and Local Pareto Models at GOP level}
+\begin{table}[ht!]
+	\centering
+	\begin{tabular}{l|ll} 
+		\hline
+		\textbf{Parameter} & \textbf{Value}  \\
+		\hline\hline
+		Encode Mode             &7 	      \\
+		Encoding Structure   &HL3ALT0,HL3ALT2,HL3ALT8,\\ 
+							&HL4ALT0, HL4ALT2, HL4ALT8  \\
+		DBF                       & On/Off  					\\
+		Restoration Filter        & On/Off  					\\
+		QP                       &16 - 52 in steps of 4 \\   
+		arnr-maxFrames         &7 \\
+		arnr-strength          &5  \\
+		arnr-type              &3 \\
+		\hline
+		Total encoding combinations \\
+		per segment				   & 240       \\
+		\hline
+	\end{tabular}
+	\caption{SVT-AV1 Encoder Configurations for \textbf{rt} with our new GOP's}\label{table:SVTAV1EncConf}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|c|c|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{CQP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			\textit{\textbf{Seg0}} & 20 & On & HL4ALT8 & 5031.22 & 45.61 & 97.2 \\ \hline
+			\textit{\textbf{Seg1}} & 20 & On & HL4ALT8 & 5057.23 & 45.49 & 97.56 \\ \hline
+			\textit{\textbf{Seg2}} & 20 & On & HL4ALT8 & 4714.28 & 45.51 & 94.12  \\ \hline
+			\textit{\textbf{Seg3}} & 20 & On & HL4ALT8 & 6292.16 & 45.36 & 98.32 \\ \hline
+			\textit{\textbf{Avg}}  &	&	 &  &
+			\textit{\textbf{5070.03}} &
+			\textit{\textbf{45.51}} &
+			\textit{\textbf{96.49}} \\ \hline
+		\end{tabular}%
+	}
+	\caption{Typical Mode - YouTube Recommended Bitrate achieved by CQP.}
+	\label{tab:SVT-AV1Def_maxQ_KandS}
+\end{table}
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{QP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			\textit{\textbf{Seg0}} & 24 & Off & HL3ALT8 & \textit{\textbf{5024.1}} & 45.54 & \textit{\textbf{25.40}} & 97.05  \\ \hline
+			&    &     &         & \textless{}=5070.03       &       & \textgreater{}=25       &        \\ \hline
+			\textit{\textbf{Seg1}} & 24 & Off & HL3ALT8 & \textit{\textbf{4958.16}} & 45.51 & \textit{\textbf{25.43}} & 97.16  \\ \hline
+			&    &     &         & \textless{}=5070.03      &       & \textgreater{}=25       &        \\ \hline
+			\textit{\textbf{Seg2}} & 23 & Off & HL3ALT8 & \textit{\textbf{5044.39}} & 45.61 & \textit{\textbf{25.77}}  & 97.13 \\ \hline
+			&    &     &         & \textless{}=5070.03      &       & \textgreater{}=25       &        \\ \hline
+			\textit{\textbf{Seg3}} & 24 & Off & HL4ALT8 & \textit{\textbf{4837.91}} & 45.06 & \textit{\textbf{24.41}} & 97.71 \\ \hline
+			&    &     &         & \textless{}=5070.03      &       & \textgreater{}=25       &        \\ \hline
+			\textit{\textbf{Avg}} &
+			&
+			&
+			&
+			\textit{\textbf{4991.78}} &
+			\textit{\textbf{45.50}} &
+			\textit{\textbf{25.41}} &
+			\textit{\textbf{97.17}} \\ \hline
+		\end{tabular}%
+	}	
+	\caption{DRASTIC Maximum Video Quality Mode for Kristen and Sara 1280x720, 25 \textit{fps}.}
+	\label{tab:SVT-AV1Dras_maxQ_KandS}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.812   & -0.000184  & -4.14199e-05  & HL3ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}     & 4.566  & 0.002096  & -5.5965325e-05   & HL3ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{Bits})$}}     & 10.7088 & -0.0975288   & 0.00041118   & HL3ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}}  & 2.362 & 0.03782   & -0.000386       & HL3ALT8 & Quadratic & 0.94 \\ \hline
+		\end{tabular}%
+	}
+	\caption{HL3ALT8 GOP Model Equations for Maximum Video Quality Mode.}
+	\label{tab:HL3ALT8modeleqn_KandS_MaxQ}
+\end{table}
+
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}    & 3.809   & -0.000126  & -4.484814e-05  & HL4ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}    & 4.563  & 0.002373  & -6.368074e-05    & HL4ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{Bits})$}}    & 10.591 & -0.100708   &0.000468  & HL4ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}} & 2.424 & 0.031148    & -0.0002480  & HL4ALT8 & Quadratic & 0.97 \\ \hline
+		\end{tabular}%
+	}
+	\caption{HL4ALT8 GOP Model Equations for Maximum Video Quality Mode.}
+	\label{tab:HL4ALT8modeleqn_KandS_MaxQ}
+\end{table}
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textit{\textbf{Overall Bitrate Gain}} & \textit{\textbf{Overall PSNR}} & \textit{\textbf{Overall VMAF}} \\ \hline
+			1.5 \%                               & -0.01 dB                        & 0.68                          \\ \hline
+		\end{tabular}%
+	}
+\caption{Overall DRASTIC Gains from Maximum Quality Mode.}
+\label{tab:SVT-AV1maxQ_Gains}
+\end{table}
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+			\hline
+			\textit{\textbf{Seg ID}} &
+			\textit{\textbf{QP}} &
+			\textit{\textbf{Fil}} &
+			\textit{\textbf{GOP}} &
+			\textit{\textbf{Bitrate (kbps)}} &
+			\textit{\textbf{PSNR (dB)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			\textit{\textbf{Seg0}} & 22 & off & HL4ALT8 & 4772.61                    & \textit{\textbf{45.52}} & \textit{\textbf{24.62}} & 96.96                      \\ \hline
+			&    &     &         &                            & \textgreater{}=45.51     & \textgreater{}=25       &                            \\ \hline
+			\textit{\textbf{Seg1}} & 22 & off & HL4ALT8 & 4623.82                    & \textit{\textbf{38.96}} & \textit{\textbf{25.67}} & 97.11                       \\ \hline
+			&    &     &         &                            & \textgreater{}=45.51     & \textgreater{}=25       &                            \\ \hline
+			\textit{\textbf{Seg2}} & 22 & off & HL4ALT8 & 4539.86                    & \textit{\textbf{39.45}} & \textit{\textbf{26.60}} & 97.02                      \\ \hline
+			&    &     &         &                            & \textgreater{}=45.51     & \textgreater{}=25       &                            \\ \hline
+			\textit{\textbf{Seg3}} & 22 & off & HL4ALT8 & 5338.25                    & \textit{\textbf{40.28}} & \textit{\textbf{29.47}} & 97.81                      \\ \hline
+			&    &     &         &                            & \textgreater{}=45.51     & \textgreater{}=25       &                            \\ \hline
+			\textit{\textbf{Avg}}  &    &     &         & \textit{\textbf{4714.71}} & \textit{\textbf{45.50}} &                         & \textit{\textbf{97.1}} \\ \hline
+		\end{tabular}%
+	}
+	
+	\caption{DRASTIC Minimum Bitrate Mode for Kristen and Sara 1280x720, 25 \textit{fps}.}
+	\label{tab:SVT-AV1Dras_minB_KandS}
+\end{table}
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Coefficients}} &
+			\textit{\textbf{$\beta_0$}} &
+			\textit{\textbf{$\beta_1$}} &
+			\textit{\textbf{$\beta_2$}} &
+			{GOP.Str} &
+			{Model Order} &
+			{Adjusted {$R^2$}} \\ \hline
+			{{$\log(\text{PSNR})$}}     & 3.814   & -0.000113  & -4.18589e-05  & HL4ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{VMAF})$}}    & 4.5593  & 0.0019051  & -5.356909e-05    & HL4ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{Bits})$}}    & 10.518 & -0.1047603   & 0.0005110   & HL4ALT8 & Quadratic & 0.99 \\ \hline
+			{{$\log(\text{EncRate})$}} & 2.454 &0.0481   & -0.00052   & HL4ALT8 & Quadratic & 0.93 \\ \hline
+		\end{tabular}%
+	}
+	\caption{HL4ALT8 GOP Model Equations for Maximum Video Quality Mode.}
+	\label{tab:HL4ALT8modeleqn_KandS_MinB}
+\end{table}
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textit{\textbf{Overall Bitrate Gain}} & \textit{\textbf{Overall PSNR}} & \textit{\textbf{Overall VMAF}} \\ \hline
+			7.0 \%                               & 0.01 dB                        & 0.61                          \\ \hline
+		\end{tabular}%
+	}
+	\caption{Overall DRASTIC Gains from Maximum Quality Mode.}
+	\label{tab:SVT-AV1-KandS-minB_Gains}
+\end{table}
+
+	
+	
+	%
+	%                                       Chapter 7
+	%
+\chapter{ Emerging VVC encoding standard with VMAF metric evaluation}
+\begin{table}[]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|l|l|l|l|}
+			\hline
+			VVC\_LOWDELAY\_P       &    &         &         &         &          &          &           &                 &                 &            \\ \hline
+			TOTAL FRAMES           & QP & Y-PSNR  & U-PSNR  & V-PSNR  & YUV-PSNR & SSIM     & VMAF      & BITRATE in kbps & ENC.TIME in sec & PSNR611    \\ \hline
+			& 22 & 39.3615 & 43.8341 & 45.1895 & 40.4481  & 0.995347 & 99.973599 & 15946.1664      & 306453.796      & 40.649075  \\ \hline
+			& 27 & 37.4569 & 42.4572 & 43.0289 & 38.5489  & 0.989731 & 97.277038 & 4917.3664       & 160578.477      & 38.7784375 \\ \hline
+			& 32 & 35.5552 & 41.1415 & 41.1733 & 36.6538  & 0.978608 & 87.189286 & 2235.6088       & 103082.973      & 36.95575   \\ \hline
+			& 37 & 33.5596 & 39.8365 & 39.3749 & 34.6896  & 0.959044 & 73.570743 & 1124.8256       & 66745.178       & 35.071125  \\ \hline
+			& 42 & 31.3267 & 38.6067 & 37.5532 & 32.5137  & 0.925036 & 57.533403 & 561.5584        & 44171.891       & 33.0150125 \\ \hline
+			&    &         &         &         &          &          &           &                 &                 &            \\ \hline
+			VVC\_RANDOM\_ACCESS\_B &    &         &         &         &          &          &           &                 &                 &            \\ \hline
+			&    &         &         &         &          &          &           &                 &                 &            \\ \hline
+			TOTAL FRAMES           & QP & Y-PSNR  & U-PSNR  & V-PSNR  & YUV-PSNR & SSIM     & VMAF      & BITRATE in kbps & ENC.TIME in sec & PSNR611    \\ \hline
+			& 22 & 39.3933 & 44.2801 & 45.36   & 40.4635  & 0.99588  & 99.95928  & 14849.0832      & 406862.829      & 40.7499875 \\ \hline
+			& 27 & 37.8607 & 43.2769 & 44.1146 & 39.022   & 0.99244  & 98.15996  & 4916.7528       & 229959.143      & 39.3194625 \\ \hline
+			& 32 & 36.2269 & 42.1619 & 42.3841 & 37.4023  & 0.985021 & 90.588555 & 2239.5712       & 153585.472      & 37.738425  \\ \hline
+			& 37 & 34.2932 & 40.8477 & 40.5033 & 35.4875  & 0.970336 & 78.513701 & 1106.396        & 90391.86        & 35.888775  \\ \hline
+			& 42 & 32.2309 & 39.7232 & 38.7187 & 33.4714  & 0.944693 & 64.073401 & 572.7824        & 48703.368       & 33.9784125 \\ \hline
+		\end{tabular}%
+	}
+	\caption{VVC results for BasketballDrive 1920x1080, Class B HEVC Video Sequence.}
+\label{tab:VVC_BasketballDrive}
+\end{table}
+\begin{table}[h!]
+	\centering
+		\label{tab:HEVC_videos}
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Video}} &
+			\textit{\textbf{Class}} &
+			\textit{\textbf{Dimension (WxH)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{Video Content description}} \\ \hline
+			Blowing Bubbles  & D & 416x240   & 50 & Medium motion, Zoom out, Textured background                       \\ \hline
+			BQ Square        & D & 416x240   & 60 & Camere tilted movement, Non-uniform motion                         \\ \hline
+			Basketball Pass  & D & 416x240   & 50 & High motion , Panning movement,  Textured background               \\ \hline
+			Race Horses      & D & 416x240   & 30 & Medium motion, Camera tilted                                       \\ \hline
+			Basketball Drill & C & 832x480   & 30 & High motion                                                        \\ \hline
+			Party Scene      & C & 832x480   & 50 & Camera Zoom in, Medium motion                                      \\ \hline
+			RaceHorses       & C & 832x480   & 50 & Medium motion, Camera tilted moving across the background          \\ \hline
+			BQMall           & C & 832x480   & 30 & Medium motion, Camera panning, People walking across               \\ \hline
+			Vidyo1           & E & 1280x720  & 60 & Stationary, Three People, face expressions                         \\ \hline
+			Vidyo2           & E & 1280x720  & 60 & Stationary, Single person                                          \\ \hline
+			Vidyo3           & E & 1280x720  & 60 & Stationary, Single person                                          \\ \hline
+			Four People      & E & 1280x720  & 60 & Stationary, Four people conversing                                 \\ \hline
+			Kristen and Sara & E & 1280x720  & 60 & Two People conversing static background                            \\ \hline
+			Johnny           & E & 1280x720  & 60 & Single person with static background                               \\ \hline
+			Basketball Drive & B & 1920x1080 & 50 & High Motion, Camera following the player                           \\ \hline
+			Cactus           & B & 1920x1080 & 50 & Complex circular, rotational motions with a static background      \\ \hline
+			Kimono           & B & 1920x1080 & 24 & Medium motion, Camera panning across the frame with a scene change \\ \hline
+			Park Scene       & B & 1920x1080 & 24 & Medium motion, Camera pans across following the bicyclists         \\ \hline
+			BQ Terrace &
+			B &
+			1920x1080 &
+			60 &
+			Medium motion, Camera tilts at an angle and then focuses on the road \\ \hline
+			Traffic          & A & 2560x1600 & 30 & Stationary, several cars moving on a busy road                     \\ \hline
+			PeopleonStreet   & A & 2560x1600 & 30 & Stationary, several people Crossing the road                       \\ \hline
+		\end{tabular}%
+	
+	}\caption{HEVC Video Dataset} \cite{HEVCTestvideo}
+\end{table}
+\begin{table}[h!]
+	\centering
+	\label{tab:Tampere_1080p} 
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Video}} &
+			\textit{\textbf{Class}} &
+			\textit{\textbf{Dimension (WxH)}} &
+			\textit{\textbf{FPS}} &
+			\textit{\textbf{Video Content description}} \\ \hline
+			Beauty      & B & 1920x1080 & 60 & Stationary camera focusing on  Smooth face and textured hair   \\ \hline
+			Bo          & B & 1920x1080 & 60 & Camera following a boat moving across the sea                  \\ \hline
+			HoneyBee    & B & 1920x1080 & 60 & Honey bee moving across purple flowers                         \\ \hline
+			Jockey      & B & 1920x1080 & 30 & High motion, Camera tracking a single jockey                   \\ \hline
+			ReadysetGo  & B & 1920x1080 & 30 & High motion, Camera tracking multiple jockeys on the racecourt \\ \hline
+			ShakeandDry & B & 1920x1080 & 30 & Stationary camera focusing on dog shaking out the water        \\ \hline
+			Yachtride &
+			B &
+			1920x1080 &
+			60 &
+			High motion, Camera following the boat and large swirls of surrounding water \\ \hline
+		\end{tabular}%
+	}	\caption{Tampere Video Dataset} \cite{UHDvideo}
+\end{table}
+
+
+\begin{table}[h!]
+	\centering
+	
+	\label{tab:UTLIVE432p} 
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Video}} & \textit{\textbf{Class}} & \textit{\textbf{Dimension (WxH)}} & \textit{\textbf{FPS}} & \textit{\textbf{Video Content description}} \\ \hline
+			Bluesky        & Custom & 768x432 & 25 & Circular motion across the blue sky                           \\ \hline
+			MobileCalendar & Custom & 768x432 & 50 & Zooms out, non-uniform motion happens                         \\ \hline
+			Tractor        & Custom & 768x432 & 25 & Camera follows the tractor and then zooms on the big wheels   \\ \hline
+			Pedestrian     & Custom & 768x432 & 25 & Stationary, People walking on a street                        \\ \hline
+			Parkrun        & Custom & 768x432 & 50 & Camera tracks a man and then becomes stationary               \\ \hline
+			Riverbed       & Custom & 768x432 & 25 & Swirling water flow, Camera stationary                        \\ \hline
+			Rushhour       & Custom & 768x432 & 25 & Static camera on a busy road                                  \\ \hline
+			Sunflower      & Custom & 768x432 & 25 & Highly textured sunflower and moving camera following the bee \\ \hline
+			Shields        & Custom & 768x432 & 50 & Camera tracking the shield, Stops and then zooms in           \\ \hline
+			Station        & Custom & 768x432 & 25 & Camera Zooms out                                              \\ \hline
+		\end{tabular}%
+	}\caption{UT LIVE VQA, Dataset at a resolution of 768x432} \cite{Kalpana}
+\end{table}
+\begin{table}[]
+	\centering
+	
+	\label{tab:Video_codec}
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|}
+			\hline
+			\textit{\textbf{Codec}} & \textit{\textbf{Version}} & \textit{\textbf{QP range}} & \textit{\textbf{Encoding Parameters}} \\ \hline
+			X265                    & 2.1                       & 22, 27, 32, 37             & --psnr, --ssim, --sao, --deblock      \\ \hline
+			VVC                 & 7.1                       & 22, 27, 32, 37             & --psnr, --ssim, --sao,                \\ \hline
+			VP9 &
+			1.8 &
+			27, 35, 46, 55 &
+			\begin{tabular}[c]{@{}l@{}}--psnr, --i420 , --arnr-maxframes=7, --arnr-strength=5, --arnr-type=3,\\  --end-usage=3, --bit-depth=8, --enable-altref=1, --lag-in-frames=25\end{tabular} \\ \hline
+			SVT-AV1 &
+			0.7 &
+			27, 35, 46, 55 &
+			\begin{tabular}[c]{@{}l@{}}--psnr, --i420 , --arnr-maxframes=7, --arnr-strength=5, --arnr-type=3,\\  --end-usage=3, --hierarchical-level 4, --enable-altref=1, --bit-depth=8, \\ --restoration-filtering=0, --dlf=0\end{tabular} \\ \hline
+		\end{tabular}%
+	}\caption{Video Codec Configurations.}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                                  \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 53.61\%           & 71.11\%         & 71.79\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 38.79\%         & 40.93\%        \\ \hline
+			\textit{x265}     &              &                  & -             & 3.65\%         \\ \hline
+		\end{tabular}%
+	}
+	\caption{BD-PSNR HEVC VIDEO DATASET 416x240p}
+\label{tab:240p_BDPSNR_HEVC}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 59.97\%            & 77.28\%         & 75.06\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 44.23\%         & 34.81\%        \\ \hline
+			\textit{x265}     &              &                  & -             & 18.05\%        \\ \hline
+		\end{tabular}%
+	}\label{tab:240p_BDVMAF_HEVC}
+	\caption{BD-VMAF HEVC VIDEO DATASET 416x240p }
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 56.17\%            & 67.50\%         & 75.00\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 23.33\%         & 36.52\%       \\ \hline
+			\textit{x265}     &              &                  & -            & 25.30\%        \\ \hline
+		\end{tabular}%
+	}
+	\caption{BD-PSNR UT LIVE VIDEO DATASET 768x432p}
+	\label{tab:432p_BDPSNR_UTLIVE}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 64.80\%            & 68.94\%         & 74.90\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 7.30\%          & 12.80\%        \\ \hline
+			\textit{x265}     &              &                  & -              & 17.90\%        \\ \hline
+		\end{tabular}%
+	}
+	\caption{BD-VMAF UT LIVE VIDEO DATASET 768x432p}
+	\label{tab:432p_BDVMAF_UTLIVE}
+\end{table}
+
+
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 56\%               & 70.3\%          & 73\%           \\ \hline
+			\textit{SVT-AV1}  &              & -                & 31.06\%         & 38.44\%        \\ \hline
+			\textit{x265}     &              &                  & -             & 11.10\%        \\ \hline
+		\end{tabular}%
+	}
+\caption{BD-PSNR HEVC VIDEO DATASET 832x480p }
+\label{tab:480p_BDPSNR_HEVC}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 59.63\%             & 71.54\%          & 79.77\%         \\ \hline
+			\textit{SVT-AV1}  &              & -                & 27.06\%          & 50.6\%          \\ \hline
+			\textit{x265}     &              &                  & -             & 32.50\%         \\ \hline
+		\end{tabular}%
+	}
+	\label{tab:480p_BDVMAF_HEVC}
+			\caption{BD-VMAF HEVC VIDEO DATASET 832x480p}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 44.52\%            & 57.80\%          & 74.72\%         \\ \hline
+			\textit{SVT-AV1}  &              & -                & 35.83\%          & 62.27\%         \\ \hline
+			\textit{x265}     &              &                  & -             & 39.27\%         \\ \hline
+		\end{tabular}%
+	}
+\caption{BD-PSNR HEVC VIDEO DATASET 1280x720p}
+\label{tab:720p_BDPSNR_HEVC}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 62.98\%             & 73.42\%          & 76.37\%         \\ \hline
+			\textit{SVT-AV1}  &              & -                & 29.85\%          & 38.64\%         \\ \hline
+			\textit{x265}     &              &                  & -             & 16.18\%         \\ \hline
+		\end{tabular}%
+	}
+	\caption{BD-VMAF HEVC VIDEO DATASET 1280x720p}
+	\label{tab:720p_BDVMAF_HEVC}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 49.8\%             & 67.00\%         & 75.80\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 32.60\%         & 51.00\%        \\ \hline
+			\textit{x265}     &              &                  & -             & 27.60\%        \\ \hline
+		\end{tabular}%
+	}
+\label{tab:1080p_BDPSNR_HEVC}
+	\caption{BD-PSNR HEVC VIDEO DATASET 1920x1080p}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\label{tab:my-table}
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 54.2\%             & 59.8\%          & 67.80\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 13.73\%         & 26.77\%        \\ \hline
+			\textit{x265}     &              &                  & -             & 17.84\%        \\ \hline
+		\end{tabular}%
+	}
+\label{tab:1080p_BDVMAF_HEVC}
+	\caption{BD-VMAF HEVC VIDEO DATASET 1920x1080p}
+\end{table}
+\begin{table}[hbt!]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 8.28\%             & 26\%            & 48.71\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 35.14\%         & 53.00\%        \\ \hline
+			\textit{x265}     &              &                  & -             & 31.43\%        \\ \hline
+		\end{tabular}%
+	}\caption{BD-PSNR TAMPERE VIDEO DATASET 1920x1080p}
+\label{tab:1080p_BDPSNR_Tampere}
+\end{table}
+\begin{table}[hbt!]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 15.20\%             & 18.18\%          & 33.23\%         \\ \hline
+			\textit{SVT-AV1}  &              & -                & 5.47\%           & 23.9\%          \\ \hline
+			\textit{x265}     &              &                  & -             & 19.21\%         \\ \hline
+		\end{tabular}%
+	}\caption{BD-VMAF TAMPERE VIDEO DATASET 1920x1080p}
+\label{tab:1080p_BDVMAF_Tampere}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 49.57\%            & 62.98\%         & 62.26\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 26.62\%         & 325.50\%        \\ \hline
+			\textit{x265}     &              &                  & -             & 1.57\%        \\ \hline
+		\end{tabular}%
+	}\caption{BD-PSNR HEVC PEOPLE VIDEO 2500x1600p}
+\label{tab:1600p_BDPSNR_Ppl}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 50.78\%            & 67.59\%         & 76.18\%        \\ \hline
+			\textit{SVT-AV1}  &              & -                & 33.88\%         & 51.82\%        \\ \hline
+			\textit{x265}     &              &                  & -             & 26.55\%        \\ \hline
+		\end{tabular}%
+	}\caption{BD-PSNR HEVC TRAFFIC VIDEO 2500x1600p}
+	\label{tab:1600p_BDPSNR_Traf}
+\end{table}
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 77.86\%             & 69.44\%          & 65.27\%         \\ \hline
+			\textit{SVT-AV1}  &              & -                & 38.79\%          & 47.35\%         \\ \hline
+			\textit{x265}     &              &                  & -             & 16.60\%         \\ \hline
+		\end{tabular}%
+	}	\label{tab:1600p_BDVMAF_HEVC-Ppl}
+\caption{BD-VMAF PEOPLE VIDEO 2500x1600p}
+\end{table}
+
+\begin{table}[]
+	\centering
+	\tiny
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			\multicolumn{5}{|c|}{\textit{Bitrate savings Relative to}}                         \\ \hline
+			\textit{Encoding} & \textit{VVC} & \textit{SVT-AV1} & \textit{x265} & \textit{VP9} \\ \hline
+			\textit{VVC}      & -            & 58.47\%          & 66.10\%          & 71.14\%         \\ \hline
+			\textit{SVT-AV1}  &              & -                & 18.32\%          & 29.17\%         \\ \hline
+			\textit{x265}     &              &                  & -             & 15.32\%         \\ \hline
+		\end{tabular}%
+	}	\label{tab:1600p_BDVMAF_HEVC}
+	\caption{BD-VMAF TRAFFIC VIDEO 2500x1600p}
+\end{table}
+
+\begin{table}[ht]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			\textit{\textbf{Subjective VQA with Codecs}} &
+			\multicolumn{2}{c|}{\textit{\textbf{SVT-AV1}}} &
+			\multicolumn{2}{c|}{\textit{\textbf{VP9}}} &
+			\multicolumn{2}{c|}{\textit{\textbf{x265}}} \\ \hline
+			\textit{\textbf{Correlation Metrics}} &
+			\textit{\textbf{PSNR}} &
+			\textit{\textbf{VMAF}} &
+			\textit{\textbf{PSNR}} &
+			\textit{\textbf{VMAF}} &
+			\textit{\textbf{PSNR}} &
+			\textit{\textbf{VMAF}} \\ \hline
+			\textit{\textbf{SROCC}} & 0.64  & \textit{\textbf{0.75}} & 0.63 & \textit{\textbf{0.74}} & 0.61 & \textit{\textbf{0.635}} \\ \hline
+			\textit{\textbf{POCC}}  & 0.623 & \textit{\textbf{0.78}} & 0.6  & \textit{\textbf{0.70}} & 0.58 & \textit{\textbf{0.633}} \\ \hline
+		\end{tabular}%
+	}
+	\caption{Correlation Metrics for the Subjective Video Quality Assessment for the Mixed bag Dataset}
+	\label{tab:SubjVQA_Corr}
+\end{table}
+
+
+	
+	
+
+	\bibliographystyle{IEEEtran}
+	\bibliography{thesis1}
+	
+\end{document}
+ 
